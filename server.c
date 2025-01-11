@@ -2,7 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <time.h>
 #include <unistd.h>
+#include <regex.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/select.h>
@@ -34,11 +36,8 @@ enum MHD_Result answer_to_connection (
     struct MHD_Response *response;
     enum MHD_Result return_value;
 
-    if (strcmp(method, "GET") != 0) {
-        response = MHD_create_response_empty(MHD_RF_NONE);
-
-        return_value = MHD_queue_response(connection, MHD_HTTP_NOT_ACCEPTABLE, response);
-    }
+    regex_t get_monkey_by_id_regex;
+    regcomp(&get_monkey_by_id_regex, "\/monkey\/([0-9]+)", REG_EXTENDED);
 
     if (strcmp(url, "/fusty") == 0) {
         int fd;
@@ -88,7 +87,7 @@ enum MHD_Result answer_to_connection (
             for (int j = 0; j < cols; j++) {
                 switch (PQftype(res, j)) {
                     case VARCHAROID:
-                    case BPCHAROID:
+                    case BPCHAROID: 
                         cJSON *parsedText = cJSON_CreateString(PQgetvalue(res, i, j));
                         cJSON_AddItemToObject(parsedRow, PQfname(res, j), parsedText);
                         break;
@@ -112,6 +111,105 @@ enum MHD_Result answer_to_connection (
         PQclear(res);
         cJSON_Delete(result);
     }
+    else if (regexec(&get_monkey_by_id_regex, url, 0, NULL, 0) == 0) {
+        char *token;
+        int id = 0;
+        char *url_copy = strdup(url);
+        while ((token = strsep(&url_copy, "/"))) {
+            if ((id = atoi(token))) {
+                printf("searching for id %d\n", id);
+                break;
+            }
+        }
+
+        if (id == 0) {
+            const char *page = "couldn't find a valid ID in url, make sure your request is /monkey/{id} and id is greater than 0";
+
+            response = MHD_create_response_from_buffer(strlen(page), page, MHD_RESPMEM_PERSISTENT);
+
+            return_value = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+
+            return return_value;
+        }
+
+        PGconn *conn;
+        PGresult *res;
+
+        conn = PQconnectdb(CONN_STR);
+
+        char *query;
+
+        int size = snprintf(NULL, 0, "SELECT * FROM monkeys WHERE id = %d", id) + 1;
+
+        query = malloc(size);
+
+        snprintf(query, size, "SELECT * FROM monkeys WHERE id = %d", id);
+
+        res = PQexec(conn, query);
+
+        int rows = PQntuples(res);
+        int cols = PQnfields(res);
+
+        printf("query returned %d rows and %d columns\n", rows, cols);
+
+        if (rows == 0) {
+            const char *page = "monkey not found";
+
+            response = MHD_create_response_from_buffer(strlen(page), page, MHD_RESPMEM_PERSISTENT);
+
+            return_value = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+
+            return return_value;
+        }
+
+        cJSON *result = cJSON_CreateObject();
+        cJSON *monkey = cJSON_CreateObject();
+        cJSON_AddItemToObject(result, "monkey", monkey);
+
+        for (int j = 0; j < cols; j++) {
+            switch (PQftype(res, j)) {
+                case VARCHAROID:
+                case BPCHAROID:
+                    cJSON *parsedText = cJSON_CreateString(PQgetvalue(res, 0, j));
+                    cJSON_AddItemToObject(monkey, PQfname(res, j), parsedText);
+                    break;
+                case INT2OID:
+                case INT4OID:
+                case INT8OID:
+                    cJSON *parsedInteger = cJSON_CreateNumber(atoi(PQgetvalue(res, 0, j)));
+                    cJSON_AddItemToObject(monkey, PQfname(res, j), parsedInteger);
+                    break;
+            }
+        }
+
+        char *resultBuffer = cJSON_Print(result);
+        response = MHD_create_response_from_buffer(strlen(resultBuffer), resultBuffer, MHD_RESPMEM_PERSISTENT);
+
+        return_value = MHD_queue_response(connection, MHD_HTTP_OK, response);
+
+        PQclear(res);
+        cJSON_Delete(result);
+
+        free(url_copy);
+        free(query);
+    }
+    else {
+        char *page;
+
+        int size = snprintf(NULL, 0, "no route matched for %s", url) + 1;
+
+        page = malloc(size);
+
+        snprintf(page, size, "no route matched for %s", url);
+
+        response = MHD_create_response_from_buffer(strlen(page), page, MHD_RESPMEM_PERSISTENT);
+
+        return_value = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+
+        return return_value;
+    }
+
+    regfree(&get_monkey_by_id_regex);
 
     MHD_destroy_response(response);
 
