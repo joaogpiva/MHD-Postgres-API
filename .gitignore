@@ -50,6 +50,9 @@
 # Valgrind output
 vgcore*
 
+# LSP config
+.clangd
+
 # Kernel Module Compile Results
 *.mod*
 *.cmd
