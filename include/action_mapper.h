@@ -10,8 +10,9 @@ enum Action {
 
 typedef struct {
     const char *pattern;
+    const char *method;
     enum Action action;
     int is_regex;
 } UrlActionMapping;
 
-enum Action get_action_from_url (const char *url);
+enum Action get_action_from_url_and_method (const char *url, const char *method);
