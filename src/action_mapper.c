@@ -8,7 +8,8 @@ const UrlActionMapping url_mappings[] = {
     { "/fusty", "GET", GET_IMAGE, 0 },
     { "/monkeys", "GET", GET_ALL, 0 },
     { "/monkey/(.+)", "GET", GET_BY_ID, 1 },
-    { "/monkey(/?)", "POST", CREATE, 1}
+    { "/monkey(/?)", "POST", CREATE, 1},
+    { "/monkey/(.+)", "PUT", UPDATE, 1 },
 };
 
 const int num_mappings = sizeof(url_mappings) / sizeof(url_mappings[0]);

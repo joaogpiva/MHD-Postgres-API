@@ -62,7 +62,7 @@ enum MHD_Result answer_to_connection (
         }
 
         post_data = *con_cls;
-        printf("finished processing data, content received: %s\n", post_data->data);
+        printf("finished processing data, content received: \n%s\n", post_data->data);
     }
 
     FullResponse response;
@@ -84,6 +84,8 @@ enum MHD_Result answer_to_connection (
             response = handle_create(post_data);
             break;
         case UPDATE:
+            response = handle_update(post_data, url);
+            break;
         case DELETE:
         case NO_ACTION:
             response = handle_no_action(url, method);

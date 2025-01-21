@@ -6,8 +6,6 @@
 #include <cjson/cJSON.h>
 #include "actions.h"
 
-int extract_id_from_url(const char *url);
-
 FullResponse handle_get_by_id(const char *url)
 {
     FullResponse response;
@@ -85,20 +83,4 @@ FullResponse handle_get_by_id(const char *url)
     PQfinish(db_conn);
 
     return response;
-}
-
-int extract_id_from_url(const char *url)
-{
-    char *token;
-    int id = 0;
-    char *url_copy = strdup(url);
-    while ((token = strsep(&url_copy, "/"))) {
-        if ((id = atoi(token))) {
-            break;
-        }
-    }
-
-    free(url_copy);
-
-    return id;
 }

@@ -7,12 +7,8 @@
 #include <microhttpd.h>
 #include "actions.h"
 
-FullResponse invalid_parameter_error_response(char *param_name);
-
 FullResponse handle_create(PostData *post_data)
 {
-    FullResponse response;
-
     PGconn *db_conn;
     PGresult *db_result;
     const char *query_params[3];
@@ -59,6 +55,8 @@ FullResponse handle_create(PostData *post_data)
         return invalid_parameter_error_response("type");
     }
 
+    FullResponse response;
+
     printf("creating: %s, %s, %s\n", query_params[0], query_params[1], query_params[2]);
 
     db_conn = PQconnectdb(CONN_STR);
@@ -103,20 +101,3 @@ FullResponse handle_create(PostData *post_data)
     return response;
 }
 
-FullResponse invalid_parameter_error_response(char *param_name)
-{
-    FullResponse response;
-
-    char *message;
-
-    int size = snprintf(NULL, 0, "error parsing body, invalid parameter: %s", param_name) + 1;
-
-    message = malloc(size);
-
-    snprintf(message, size, "error parsing body, invalid parameter: %s", param_name);
-
-    response.response_content = MHD_create_response_from_buffer(strlen(message), message, MHD_RESPMEM_PERSISTENT);
-    response.status_code = MHD_HTTP_BAD_REQUEST;
-
-    return response;
-}
