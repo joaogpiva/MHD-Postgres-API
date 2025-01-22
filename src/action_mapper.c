@@ -10,6 +10,7 @@ const UrlActionMapping url_mappings[] = {
     { "/monkey/(.+)", "GET", GET_BY_ID, 1 },
     { "/monkey(/?)", "POST", CREATE, 1},
     { "/monkey/(.+)", "PUT", UPDATE, 1 },
+    { "/monkey/(.+)", "DELETE", DELETE, 1 },
 };
 
 const int num_mappings = sizeof(url_mappings) / sizeof(url_mappings[0]);

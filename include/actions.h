@@ -22,6 +22,7 @@ FullResponse handle_get_all();
 FullResponse handle_get_by_id(const char *url);
 FullResponse handle_create(PostData *post_data);
 FullResponse handle_update(PostData *post_data, const char *url);
+FullResponse handle_delete(const char *url);
 FullResponse handle_no_action(const char *url, const char *method);
 
 static int extract_id_from_url(const char *url)

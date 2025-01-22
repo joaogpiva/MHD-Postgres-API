@@ -87,6 +87,8 @@ enum MHD_Result answer_to_connection (
             response = handle_update(post_data, url);
             break;
         case DELETE:
+            response = handle_delete(url);
+            break;
         case NO_ACTION:
             response = handle_no_action(url, method);
             break;
