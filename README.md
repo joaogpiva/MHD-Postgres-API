@@ -32,14 +32,14 @@ curl --request GET \
 
 ```
 {
-    "monkeys": [
-        {
-			"id": integer,
-			"name": "string",
-			"price": integer,
-			"type": "char"
-		}
-    ]
+  "monkeys": [
+    {
+      "id": integer,
+      "name": "string",
+      "price": integer,
+      "type": "char"
+    }
+  ]
 }
 ```
 
@@ -60,12 +60,12 @@ curl --request GET \
 
 ```
 {
-    "monkey": {
-        "id": integer,
-        "name": "string",
-        "price": integer,
-        "type": "char"
-    }
+  "monkey": {
+    "id": integer,
+    "name": "string",
+    "price": integer,
+    "type": "char"
+  }
 }
 ```
 
@@ -92,12 +92,12 @@ curl --request POST \
 
 ```
 {
-    "monkey": {
-        "id": integer,
-        "name": "string",
-        "price": integer,
-        "type": "char"
-    }
+  "monkey": {
+    "id": integer,
+    "name": "string",
+    "price": integer,
+    "type": "char"
+  }
 }
 ```
 
@@ -115,9 +115,9 @@ curl --request PUT \
   --header 'Content-Type: application/json' \
   --data '{
 	"monkey": {
-        "name": "string",
-        "price": integer,
-        "type": "char"
+      "name": "string",
+      "price": integer,
+      "type": "char"
     }
 }'
 ```
