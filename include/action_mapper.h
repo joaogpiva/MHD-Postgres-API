@@ -1,3 +1,5 @@
+#pragma once
+
 enum Action {
     GET_IMAGE,
     GET_ALL,

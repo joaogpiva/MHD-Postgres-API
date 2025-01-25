@@ -1,3 +1,5 @@
+#pragma once
+
 #include <libpq-fe.h>
 #include <stdio.h>
 #include <stdlib.h>

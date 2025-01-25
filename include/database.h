@@ -1,3 +1,5 @@
+#pragma once
+
 #include <libpq-fe.h>
 
 #define CONN_STR "host=localhost port=5432 dbname=mhd_api_db user=mhd_api_user password=mhd_api_pw"

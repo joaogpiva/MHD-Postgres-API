@@ -1,3 +1,5 @@
+#pragma once
+
 #include <microhttpd.h>
 
 enum MHD_Result iterate_post(
