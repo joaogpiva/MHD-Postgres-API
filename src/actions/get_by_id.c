@@ -1,3 +1,4 @@
+#include <microhttpd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +7,7 @@
 #include <cjson/cJSON.h>
 #include "actions.h"
 
-FullResponse handle_get_by_id(const char *url)
+FullResponse handle_get_by_id(PGconn *db_conn, const char *url)
 {
     FullResponse response;
 
@@ -21,20 +22,14 @@ FullResponse handle_get_by_id(const char *url)
         return response;
     }
 
-    PGconn *db_conn;
     PGresult *db_result;
 
-    db_conn = PQconnectdb(CONN_STR);
+    char id_str[12];
+    snprintf(id_str, sizeof(id_str), "%d", id);
 
-    char *query;
+    const char *params[1] = { id_str };
 
-    int size = snprintf(NULL, 0, "SELECT * FROM monkeys WHERE id = %d", id) + 1;
-
-    query = malloc(size);
-
-    snprintf(query, size, "SELECT * FROM monkeys WHERE id = %d", id);
-
-    db_result = PQexec(db_conn, query);
+    db_result = PQexecPrepared(db_conn, "get_monkey_by_id", 1, params, NULL, NULL, 0);
 
     int rows = PQntuples(db_result);
     int cols = PQnfields(db_result);
@@ -53,34 +48,27 @@ FullResponse handle_get_by_id(const char *url)
         cJSON *monkey = cJSON_CreateObject();
         cJSON_AddItemToObject(result, "monkey", monkey);
 
-        for (int j = 0; j < cols; j++) {
-            switch (PQftype(db_result, j)) {
-                case VARCHAROID:
-                case BPCHAROID:
-                    cJSON *parsedText = cJSON_CreateString(PQgetvalue(db_result, 0, j));
-                    cJSON_AddItemToObject(monkey, PQfname(db_result, j), parsedText);
-                    break;
-                case INT2OID:
-                case INT4OID:
-                case INT8OID:
-                    cJSON *parsedInteger = cJSON_CreateNumber(atoi(PQgetvalue(db_result, 0, j)));
-                    cJSON_AddItemToObject(monkey, PQfname(db_result, j), parsedInteger);
-                    break;
-            }
-        }
+        cJSON *id = cJSON_CreateNumber(atoi(PQgetvalue(db_result, 0, 0)));
+        cJSON_AddItemToObject(monkey, "id", id);
+
+        cJSON *name = cJSON_CreateString(PQgetvalue(db_result, 0, 1));
+        cJSON_AddItemToObject(monkey, "name", name);
+
+        cJSON *price = cJSON_CreateNumber(atoi(PQgetvalue(db_result, 0, 2)));
+        cJSON_AddItemToObject(monkey, "price", price);
+
+        cJSON *type = cJSON_CreateString(PQgetvalue(db_result, 0, 3));
+        cJSON_AddItemToObject(monkey, "type", type);
 
         char *resultBuffer = cJSON_Print(result);
         
-        response.response_content = MHD_create_response_from_buffer(strlen(resultBuffer), resultBuffer, MHD_RESPMEM_PERSISTENT);
+        response.response_content = MHD_create_response_from_buffer(strlen(resultBuffer), resultBuffer, MHD_RESPMEM_MUST_FREE);
         response.status_code = MHD_HTTP_OK;
 
         cJSON_Delete(result);
     }
 
-    free(query);
-
     PQclear(db_result);
-    PQfinish(db_conn);
 
     return response;
 }

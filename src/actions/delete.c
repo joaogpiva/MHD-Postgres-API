@@ -8,7 +8,7 @@
 #include <microhttpd.h>
 #include "actions.h"
 
-FullResponse handle_delete(const char *url)
+FullResponse handle_delete(PGconn *db_conn, const char *url)
 {
     FullResponse response;
 
@@ -23,22 +23,14 @@ FullResponse handle_delete(const char *url)
         return response;
     }
 
-    PGconn *db_conn;
     PGresult *db_result;
 
-    db_conn = PQconnectdb(CONN_STR);
+    char id_str[12];
+    snprintf(id_str, sizeof(id_str), "%d", id);
 
-    PQsetSingleRowMode(db_conn);
+    const char *params[1] = { id_str };
 
-    char *query;
-
-    int size = snprintf(NULL, 0, "DELETE FROM monkeys WHERE id = %d returning id", id) + 1;
-
-    query = malloc(size);
-
-    snprintf(query, size, "DELETE FROM monkeys WHERE id = %d returning id", id);
-
-    db_result = PQexec(db_conn, query);
+    db_result = PQexecPrepared(db_conn, "delete_monkey", 1, params, NULL, NULL, 0);
 
     char *deleted_id = PQgetvalue(db_result, 0, 0);
     char *printed_return;
@@ -52,10 +44,9 @@ FullResponse handle_delete(const char *url)
         response.status_code = MHD_HTTP_OK;
     }
 
-    response.response_content = MHD_create_response_from_buffer(strlen(printed_return), printed_return, MHD_RESPMEM_PERSISTENT);
+    response.response_content = MHD_create_response_from_buffer(strlen(printed_return), printed_return, MHD_RESPMEM_MUST_FREE);
 
     PQclear(db_result);
-    PQfinish(db_conn);
 
     return response;
 }

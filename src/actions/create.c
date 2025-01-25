@@ -7,9 +7,8 @@
 #include <microhttpd.h>
 #include "actions.h"
 
-FullResponse handle_create(PostData *post_data)
+FullResponse handle_create(PGconn *db_conn, PostData *post_data)
 {
-    PGconn *db_conn;
     PGresult *db_result;
     const char *query_params[3];
 
@@ -59,19 +58,12 @@ FullResponse handle_create(PostData *post_data)
 
     printf("creating: %s, %s, %s\n", query_params[0], query_params[1], query_params[2]);
 
-    db_conn = PQconnectdb(CONN_STR);
-
-    PQsetSingleRowMode(db_conn);
-
-    const char *query = "insert into monkeys(name, price, type) values ($1, $2, $3) returning id";
-
-    db_result = PQexecParams(db_conn, query, 3, NULL, query_params, NULL, NULL, 0);
+    db_result = PQexecPrepared(db_conn, "create_monkey", 3, query_params, NULL, NULL, 0);
 
     char *id = PQgetvalue(db_result, 0, 0);
     printf("inserted row id: %s\n", id);
 
     PQclear(db_result);
-    PQfinish(db_conn);
 
     cJSON *content = cJSON_CreateObject();
     cJSON *return_monkey = cJSON_CreateObject();
@@ -92,7 +84,7 @@ FullResponse handle_create(PostData *post_data)
 
     char *printed_return = cJSON_Print(content);
 
-    response.response_content = MHD_create_response_from_buffer(strlen(printed_return), printed_return, MHD_RESPMEM_PERSISTENT);
+    response.response_content = MHD_create_response_from_buffer(strlen(printed_return), printed_return, MHD_RESPMEM_MUST_FREE);
     response.status_code = MHD_HTTP_OK;
 
     cJSON_Delete(payload);

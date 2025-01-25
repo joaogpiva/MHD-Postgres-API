@@ -15,6 +15,8 @@
 #include "action_mapper.h"
 #include "actions.h"
 
+extern PGconn *db_conn;
+
 enum MHD_Result answer_to_connection (
     void *cls, 
     struct MHD_Connection *connection,
@@ -75,19 +77,19 @@ enum MHD_Result answer_to_connection (
             response = handle_get_image();
             break;
         case GET_ALL:
-            response = handle_get_all();
+            response = handle_get_all(db_conn);
             break;
         case GET_BY_ID:
-            response = handle_get_by_id(url);
+            response = handle_get_by_id(db_conn, url);
             break;
         case CREATE:
-            response = handle_create(post_data);
+            response = handle_create(db_conn, post_data);
             break;
         case UPDATE:
-            response = handle_update(post_data, url);
+            response = handle_update(db_conn, post_data, url);
             break;
         case DELETE:
-            response = handle_delete(url);
+            response = handle_delete(db_conn, url);
             break;
         case NO_ACTION:
             response = handle_no_action(url, method);

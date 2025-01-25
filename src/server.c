@@ -5,10 +5,14 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <microhttpd.h>
+#include <libpq-fe.h>
 #include "handler.h"
 #include "action_mapper.h"
+#include "database.h"
 
 #define PORT 5000
+
+PGconn *db_conn;
 
 int main()
 {
@@ -18,14 +22,17 @@ int main()
 
     if (daemon == NULL){
         printf("something went terribly wrong\n");
-        return 1;
+        return EXIT_FAILURE;
     }
+
+    db_conn = initialize_db();
 
     printf("listening on port %d\n", PORT);
 
     getchar();
 
     MHD_stop_daemon(daemon);
+    PQfinish(db_conn);
 
     printf("daemon stopped successfully\n");
 

@@ -1,9 +1,8 @@
+#include <libpq-fe.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <microhttpd.h>
-
-#define CONN_STR "host=localhost port=5432 dbname=mhd_api_db user=mhd_api_user password=mhd_api_pw"
 
 typedef struct 
 {
@@ -18,11 +17,11 @@ typedef struct
 } PostData;
 
 FullResponse handle_get_image();
-FullResponse handle_get_all();
-FullResponse handle_get_by_id(const char *url);
-FullResponse handle_create(PostData *post_data);
-FullResponse handle_update(PostData *post_data, const char *url);
-FullResponse handle_delete(const char *url);
+FullResponse handle_get_all(PGconn *db_conn);
+FullResponse handle_get_by_id(PGconn *db_conn, const char *url);
+FullResponse handle_create(PGconn *db_conn, PostData *post_data);
+FullResponse handle_update(PGconn *db_conn, PostData *post_data, const char *url);
+FullResponse handle_delete(PGconn *db_conn, const char *url);
 FullResponse handle_no_action(const char *url, const char *method);
 
 static int extract_id_from_url(const char *url)

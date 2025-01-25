@@ -9,7 +9,7 @@
 #include <microhttpd.h>
 #include "actions.h"
 
-FullResponse handle_update(PostData *post_data, const char *url)
+FullResponse handle_update(PGconn *db_conn, PostData *post_data, const char *url)
 {
     FullResponse response;
 
@@ -24,7 +24,6 @@ FullResponse handle_update(PostData *post_data, const char *url)
         return response;
     }
 
-    PGconn *db_conn;
     PGresult *db_result;
     const char *query_params[4];
 
@@ -76,17 +75,9 @@ FullResponse handle_update(PostData *post_data, const char *url)
     sprintf(buffer, "%d", id);
     query_params[3] = strdup(buffer);
 
-    Oid param_types[4] = {VARCHAROID, NUMERICOID, BPCHAROID, INT8OID}; 
-
     printf("updating id %s: %s, %s, %s\n", query_params[3], query_params[0], query_params[1], query_params[2]);
 
-    db_conn = PQconnectdb(CONN_STR);
-
-    PQsetSingleRowMode(db_conn);
-
-    const char *query = "update monkeys set name = $1, price = $2, type = $3 where id = $4 returning id";
-
-    db_result = PQexecParams(db_conn, query, 4, param_types, query_params, NULL, NULL, 0);
+    db_result = PQexecPrepared(db_conn, "update_monkey", 4, query_params, NULL, NULL, 0);
 
     char *updated_id = PQgetvalue(db_result, 0, 0);
     char *printed_return;
@@ -104,7 +95,6 @@ FullResponse handle_update(PostData *post_data, const char *url)
 
     cJSON_Delete(payload);
     PQclear(db_result);
-    PQfinish(db_conn);
 
     return response;
 }
